@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DORA — Dashboard | Solution Bank</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --navy:#1F3864; --navy2:#162a50; --bg:#f5f6f8; --border:#dde1e9;
+  --text:#1a1f2e; --muted:#6b7385; --white:#fff;
+  --sans:'IBM Plex Sans',sans-serif; --mono:'IBM Plex Mono',monospace;
+  --c-avviare:#FAC775; --c-banca:#378ADD; --c-cli:#7F77DD;
+  --c-chiusura:#EF9F27; --c-done:#52a338; --c-grigia:#B4B2A9;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;}
+
+.header{background:var(--navy);padding:24px 40px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;border-bottom:3px solid #2a4a80;}
+.header h1{font-size:20px;font-weight:600;color:#fff;letter-spacing:-.3px;}
+.header h1 span{color:#7ab3e8;font-weight:300;}
+.header-sub{font-size:11px;color:rgba(255,255,255,0.45);margin-top:4px;font-family:var(--mono);}
+.btn-back{padding:8px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid rgba(255,255,255,0.2);background:transparent;color:rgba(255,255,255,0.7);font-family:var(--sans);text-decoration:none;transition:all .15s;}
+.btn-back:hover{background:rgba(255,255,255,0.08);color:#fff;}
+
+/* KPI strip */
+.kpi-strip{background:var(--navy2);padding:12px 40px;display:flex;gap:0;flex-wrap:wrap;border-bottom:1px solid rgba(255,255,255,0.06);}
+.kpi{padding:6px 28px 6px 0;border-right:1px solid rgba(255,255,255,0.1);margin-right:28px;}
+.kpi:last-child{border-right:none;}
+.kpi-label{font-size:10px;color:rgba(255,255,255,0.4);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;}
+.kpi-value{font-size:22px;font-weight:600;color:#fff;line-height:1.2;}
+.kpi-value.green{color:#6ecf5a;} .kpi-value.orange{color:#FAC775;} .kpi-value.red{color:#ff6b6b;}
+
+.main{padding:28px 40px 60px;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto auto;gap:24px;}
+
+.card{background:#fff;border-radius:12px;border:1px solid var(--border);box-shadow:0 2px 8px rgba(0,0,0,0.04);padding:24px 28px;display:flex;flex-direction:column;}
+.card-title{font-size:13px;font-weight:600;color:var(--navy);margin-bottom:4px;letter-spacing:-.2px;}
+.card-sub{font-size:11px;color:var(--muted);margin-bottom:20px;font-family:var(--mono);}
+.chart-wrap{flex:1;display:flex;align-items:center;justify-content:center;position:relative;}
+
+/* Gauge card spans full width */
+.card-gauge{grid-column:1/-1;}
+.gauge-inner{display:flex;align-items:center;gap:48px;flex-wrap:wrap;}
+.gauge-svg-wrap{flex-shrink:0;}
+.gauge-stats{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.stat-box{background:var(--bg);border-radius:8px;padding:14px 16px;border:1px solid var(--border);}
+.stat-label{font-size:10px;font-weight:600;color:var(--muted);font-family:var(--mono);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
+.stat-value{font-size:24px;font-weight:600;color:var(--navy);}
+.stat-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+
+/* Proiezione legend */
+.proj-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:14px;}
+.proj-leg{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);}
+.proj-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+
+.nota-footer{font-size:11px;color:var(--muted);text-align:center;margin-top:8px;font-family:var(--mono);}
+.date-badge{font-size:11px;color:rgba(255,255,255,.45);font-family:var(--mono);}
+
+@media(max-width:800px){
+  .main{grid-template-columns:1fr;}
+  .card-gauge{grid-column:1;}
+  .header,.kpi-strip,.main{padding-left:16px;padding-right:16px;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>DORA <span>/</span> Dashboard Avanzamento — <span>Solution Bank</span></h1>
+    <div class="header-sub">Deadline: 31/10/2026 &nbsp;|&nbsp; Aggiornato: <span id="hdate"></span></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:16px">
+    <span id="save-status" style="font-size:11px;color:rgba(255,255,255,0.5);font-family:'IBM Plex Mono',monospace">⟳ Caricamento dati...</span>
+    <a href="DORA_Remediation_v2.html" class="btn-back">← Timeline fornitori</a>
+  </div>
+</div>
+
+<div class="kpi-strip">
+  <div class="kpi"><div class="kpi-label">Totale</div><div class="kpi-value">26</div></div>
+  <div class="kpi"><div class="kpi-label">Conclusi</div><div class="kpi-value green" id="k-done">—</div></div>
+  <div class="kpi"><div class="kpi-label">In lavorazione</div><div class="kpi-value orange" id="k-wip">—</div></div>
+  <div class="kpi"><div class="kpi-label">Da avviare</div><div class="kpi-value" id="k-avv">—</div></div>
+  <div class="kpi"><div class="kpi-label">Grigi</div><div class="kpi-value" id="k-grey">—</div></div>
+  <div class="kpi"><div class="kpi-label">% completato</div><div class="kpi-value green" id="k-pct">—</div></div>
+  <div class="kpi"><div class="kpi-label">Mesi alla deadline</div><div class="kpi-value red" id="k-months">—</div></div>
+</div>
+
+<div class="main">
+
+  <!-- GAUGE -->
+  <div class="card card-gauge">
+    <div class="card-title">Avanzamento complessivo</div>
+    <div class="card-sub">% contratti completati sul totale · deadline 31/10/2026</div>
+    <div class="gauge-inner">
+      <div class="gauge-svg-wrap">
+        <svg width="280" height="160" viewBox="0 0 280 160">
+          <defs>
+            <linearGradient id="grad-done" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:#52a338;stop-opacity:1"/>
+              <stop offset="100%" style="stop-color:#6ecf5a;stop-opacity:1"/>
+            </linearGradient>
+          </defs>
+          <!-- Track -->
+          <path id="gauge-track" d="" fill="none" stroke="#eef0f4" stroke-width="22" stroke-linecap="round"/>
+          <!-- Progress -->
+          <path id="gauge-prog" d="" fill="none" stroke="url(#grad-done)" stroke-width="22" stroke-linecap="round" stroke-dasharray="0 1000" style="transition:stroke-dasharray 1.2s ease"/>
+          <!-- Ticks -->
+          <g id="gauge-ticks"></g>
+          <!-- Center text -->
+          <text id="gauge-pct" x="140" y="128" text-anchor="middle" font-family="IBM Plex Sans,sans-serif" font-size="38" font-weight="600" fill="#1F3864">0%</text>
+          <text x="140" y="148" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="10" fill="#6b7385">CONTRATTI CONCLUSI</text>
+        </svg>
+      </div>
+      <div class="gauge-stats">
+        <div class="stat-box">
+          <div class="stat-label">Compliant / Conclusi</div>
+          <div class="stat-value" id="s-done" style="color:#52a338">—</div>
+          <div class="stat-sub">fornitori su 26</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">In lavorazione</div>
+          <div class="stat-value" id="s-wip" style="color:#EF9F27">—</div>
+          <div class="stat-sub">analisi + chiusura</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Da avviare</div>
+          <div class="stat-value" id="s-avv" style="color:#FAC775">—</div>
+          <div class="stat-sub">ancora da pianificare</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Mesi alla deadline</div>
+          <div class="stat-value" id="s-months" style="color:#c0392b">—</div>
+          <div class="stat-sub">entro 31 ottobre 2026</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TORTA STATO -->
+  <div class="card">
+    <div class="card-title">Distribuzione per stato</div>
+    <div class="card-sub">26 fornitori · situazione attuale</div>
+    <div class="chart-wrap" style="height:260px">
+      <canvas id="chart-pie"></canvas>
+    </div>
+  </div>
+
+  <!-- PROIEZIONE -->
+  <div class="card">
+    <div class="card-title">Proiezione completamento per mese</div>
+    <div class="card-sub">Contratti attesi conclusi cumulativamente · Gen–Ott 2026</div>
+    <div class="chart-wrap" style="height:260px">
+      <canvas id="chart-proj"></canvas>
+    </div>
+    <div class="proj-legend">
+      <div class="proj-leg"><div class="proj-dot" style="background:#52a338"></div>Cumulativo conclusi</div>
+      <div class="proj-leg"><div class="proj-dot" style="background:#378ADD;opacity:.5"></div>Obiettivo (tutti entro ott)</div>
+    </div>
+    <p class="nota-footer">La proiezione è basata sui mesi di fine pianificati per ogni fornitore</p>
+  </div>
+
+</div>
+
+<script>
+const SUPPLIERS = [
+  { name:'Infocert',                    fei:'FEI',               stato:'Analisi banca — Ufficio Legale',      s:4, e:9  },
+  { name:'Netech',                      fei:'FEI',               stato:'Compliant / Concluso',                s:1, e:3  },
+  { name:'BVTech',                      fei:'FEI',               stato:'Compliant / Concluso',                s:1, e:3  },
+  { name:'TXTNovigo',                   fei:'FEI',               stato:'In capo a fornitore / da disdettare', s:1, e:10 },
+  { name:'DedaGroup',                   fei:'FEI',               stato:'Da avviare',                          s:5, e:10 },
+  { name:'Allitude',                    fei:'FEI',               stato:'In capo a fornitore / da disdettare', s:1, e:10 },
+  { name:'Cerved Group',                fei:'FEI',               stato:'Fase di chiusura',                    s:3, e:6  },
+  { name:'NewSoft Srl',                 fei:'NON FEI',           stato:'Analisi banca — Team PR',             s:4, e:7  },
+  { name:'Bios Management Srl',         fei:'NON FEI',           stato:'Compliant / Concluso',                s:1, e:4  },
+  { name:'Mediatica Digital Spa',       fei:'FEI',               stato:'Fase di chiusura',                    s:3, e:6  },
+  { name:'Kroll Advisory Spa',          fei:'Fornitura Semplice',stato:'Da avviare',                          s:5, e:10 },
+  { name:'Dinova Srl',                  fei:'NON FEI',           stato:'Analisi banca — Team PR',             s:4, e:7  },
+  { name:'HR Tools Srl',                fei:'NON FEI',           stato:'Compliant / Concluso',                s:1, e:4  },
+  { name:'Las Lab Srl',                 fei:'NON FEI',           stato:'In capo a fornitore / da disdettare', s:1, e:10 },
+  { name:'Dilitrust Italia Srl',        fei:'NON FEI',           stato:'Analisi banca — Team PR',             s:4, e:7  },
+  { name:'FIDA SRL',                    fei:'NON FEI',           stato:'Da avviare',                          s:5, e:10 },
+  { name:'Iqera Italia Spa',            fei:'FEI',               stato:'Da avviare',                          s:5, e:10 },
+  { name:'RINA Prime Credit AM SRL',    fei:'FEI',               stato:'Da avviare',                          s:5, e:10 },
+  { name:'Board Italia Srl',            fei:'NON FEI',           stato:'Analisi banca — Team PR',             s:4, e:7  },
+  { name:'Prometeia Spa',               fei:'NON FEI',           stato:'Analisi banca — Team PR',             s:4, e:7  },
+  { name:'Ats Co.Svi.G. Srl',          fei:'FEI',               stato:'Da avviare',                          s:5, e:10 },
+  { name:'Crif Spa',                    fei:'NON FEI',           stato:'Da avviare',                          s:5, e:10 },
+  { name:'Selecta Industrial Op. Spa',  fei:'FEI',               stato:'Da avviare',                          s:5, e:10 },
+  { name:'Bureau van Dijk Spa',         fei:'Fornitura Semplice',stato:'Da avviare',                          s:5, e:10 },
+  { name:'Refinitiv / Thomson Reuters', fei:'Fornitura Semplice',stato:'Compliant / Concluso',                s:1, e:4  },
+  { name:'Debitos',                     fei:'NON FEI',           stato:'Compliant / Concluso',                s:1, e:4  },
+];
+
+const BIN_ID  = '6a030bad250b1311c33b4653';
+const API_KEY = '$2a$10$g7M811r1ztaf6PR6MON3u.4TZ7T7yIcE708UVr6wRKKKdAxdi/ViO';
+const BIN_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+
+function showStatus(msg, color) {
+  const el = document.getElementById('save-status');
+  if (el) { el.textContent = msg; el.style.color = color; }
+}
+
+async function loadFromCloud() {
+  showStatus('⟳ Caricamento dati...', 'rgba(255,255,255,0.5)');
+  try {
+    const res = await fetch(BIN_URL + '/latest', {
+      headers: { 'X-Master-Key': API_KEY }
+    });
+    const json = await res.json();
+    const saved = json.record;
+    if (saved && saved.data && saved.data.length === SUPPLIERS.length) {
+      saved.data.forEach((d, i) => {
+        if (d.stato) SUPPLIERS[i].stato = d.stato;
+        if (d.fei)   SUPPLIERS[i].fei   = d.fei;
+      });
+      showStatus('✓ Dati aggiornati', '#6ecf5a');
+    } else {
+      showStatus('Dati default', 'rgba(255,255,255,0.4)');
+    }
+  } catch(e) {
+    showStatus('⚠ Errore caricamento', '#ff6b6b');
+  }
+  renderDashboard();
+}
+
+const STATI_KEYS = [
+  'Compliant / Concluso','Analisi banca — Team PR','Analisi banca — Ufficio Legale',
+  'Analisi cliente','Fase di chiusura','Da avviare','In capo a fornitore / da disdettare'
+];
+const STATI_LABELS = [
+  'Concluso','Team PR','Ufficio Legale',
+  'Analisi cliente','Fase chiusura','Da avviare','In capo a fornitore'
+];
+const STATI_COLORS = ['#52a338','#185FA5','#85B7EB','#7F77DD','#EF9F27','#FAC775','#B4B2A9'];
+
+function renderDashboard() {
+const now   = new Date();
+const done  = SUPPLIERS.filter(s=>s.stato==='Compliant / Concluso').length;
+const wip   = SUPPLIERS.filter(s=>['Analisi banca — Team PR','Analisi banca — Ufficio Legale','Analisi cliente','Fase di chiusura'].includes(s.stato)).length;
+const avv   = SUPPLIERS.filter(s=>s.stato==='Da avviare').length;
+const grey  = SUPPLIERS.filter(s=>s.stato==='In capo a fornitore / da disdettare').length;
+const pct   = Math.round(done/SUPPLIERS.length*100);
+const deadline = new Date('2026-10-31');
+const msLeft = Math.max(0, Math.ceil((deadline - now) / (1000*60*60*24*30.44)));
+
+// Date
+const dateStr = now.toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
+document.getElementById('hdate').textContent = dateStr;
+
+// KPI strip
+document.getElementById('k-done').textContent   = done;
+document.getElementById('k-wip').textContent    = wip;
+document.getElementById('k-avv').textContent    = avv;
+document.getElementById('k-grey').textContent   = grey;
+document.getElementById('k-pct').textContent    = pct+'%';
+document.getElementById('k-months').textContent = msLeft;
+
+// Stats
+document.getElementById('s-done').textContent   = done;
+document.getElementById('s-wip').textContent    = wip;
+document.getElementById('s-avv').textContent    = avv;
+document.getElementById('s-months').textContent = msLeft;
+
+// ── GAUGE SVG ──────────────────────────────────────────────────────────────
+(function() {
+  const cx=140, cy=150, r=100;
+  const startAngle = Math.PI;       // sinistra
+  const endAngle   = 2*Math.PI;     // destra (semicerchio)
+
+  function polarToXY(angle) {
+    return { x: cx + r*Math.cos(angle), y: cy + r*Math.sin(angle) };
+  }
+
+  function arcPath(aStart, aEnd) {
+    const s = polarToXY(aStart), e = polarToXY(aEnd);
+    const large = aEnd - aStart > Math.PI ? 1 : 0;
+    return `M ${s.x} ${s.y} A ${r} ${r} 0 ${large} 1 ${e.x} ${e.y}`;
+  }
+
+  document.getElementById('gauge-track').setAttribute('d', arcPath(Math.PI, 2*Math.PI));
+
+  // Ticks at 0%, 25%, 50%, 75%, 100%
+  const tg = document.getElementById('gauge-ticks');
+  [0,25,50,75,100].forEach(pv => {
+    const angle = Math.PI + (pv/100)*Math.PI;
+    const inner = { x: cx+(r-14)*Math.cos(angle), y: cy+(r-14)*Math.sin(angle) };
+    const outer = { x: cx+(r+14)*Math.cos(angle), y: cy+(r+14)*Math.sin(angle) };
+    const label = { x: cx+(r+26)*Math.cos(angle), y: cy+(r+26)*Math.sin(angle) };
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1',inner.x); line.setAttribute('y1',inner.y);
+    line.setAttribute('x2',outer.x); line.setAttribute('y2',outer.y);
+    line.setAttribute('stroke','#dde1e9'); line.setAttribute('stroke-width','1.5');
+    tg.appendChild(line);
+    const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+    txt.setAttribute('x',label.x); txt.setAttribute('y',label.y+3);
+    txt.setAttribute('text-anchor','middle');
+    txt.setAttribute('font-family','IBM Plex Mono,monospace');
+    txt.setAttribute('font-size','9'); txt.setAttribute('fill','#b0b5c0');
+    txt.textContent = pv+'%';
+    tg.appendChild(txt);
+  });
+
+  // Animate progress
+  const progPath = document.getElementById('gauge-prog');
+  const totalLen = Math.PI * r; // semicerchio
+  const filled   = (pct/100)*totalLen;
+
+  progPath.setAttribute('d', arcPath(Math.PI, 2*Math.PI));
+  progPath.setAttribute('stroke-dasharray', `0 ${totalLen}`);
+
+  setTimeout(()=>{
+    progPath.setAttribute('stroke-dasharray', `${filled} ${totalLen}`);
+    // Animate number
+    let cur=0;
+    const step = Math.ceil(pct/60);
+    const iv = setInterval(()=>{
+      cur = Math.min(cur+step, pct);
+      document.getElementById('gauge-pct').textContent = cur+'%';
+      if(cur>=pct) clearInterval(iv);
+    },20);
+  },300);
+})();
+
+// ── TORTA STATO ────────────────────────────────────────────────────────────
+(function() {
+  const counts = STATI_KEYS.map(k => SUPPLIERS.filter(s=>s.stato===k).length);
+  const ctx = document.getElementById('chart-pie').getContext('2d');
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: STATI_LABELS,
+      datasets: [{
+        data: counts,
+        backgroundColor: STATI_COLORS,
+        borderWidth: 2,
+        borderColor: '#fff',
+        hoverOffset: 8,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '62%',
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: {
+            font: { family:'IBM Plex Sans', size:11 },
+            color: '#6b7385',
+            padding: 12,
+            usePointStyle: true,
+            pointStyleWidth: 10,
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.label}: ${ctx.parsed} fornitori (${Math.round(ctx.parsed/26*100)}%)`
+          }
+        }
+      },
+      animation: { animateRotate:true, duration:900 }
+    }
+  });
+})();
+
+// ── PROIEZIONE CUMULATIVA ─────────────────────────────────────────────────
+(function() {
+  const MONTHS_LABELS = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott'];
+
+  // Per ogni fornitore: se Concluso → mese fine (e), altrimenti stima basata su stato
+  const MONTH_ENDS_STATO = {
+    'Compliant / Concluso': null,
+    'Analisi banca — Team PR': 7,
+    'Analisi banca — Ufficio Legale': 9,
+    'Analisi cliente': 9,
+    'Fase di chiusura': 7,
+    'Da avviare': 10,
+    'In capo a fornitore / da disdettare': null,
+  };
+
+  // Conta quanti contratti si chiudono per mese
+  const byMonth = Array(10).fill(0);
+  SUPPLIERS.forEach(s => {
+    if (s.stato === 'In capo a fornitore / da disdettare') return;
+    const endMonth = s.stato === 'Compliant / Concluso'
+      ? s.e
+      : (MONTH_ENDS_STATO[s.stato] || s.e);
+    const idx = Math.min(Math.max(endMonth,1),10) - 1;
+    byMonth[idx]++;
+  });
+
+  // Cumulativo
+  const cumul = [];
+  let acc = 0;
+  byMonth.forEach(v => { acc += v; cumul.push(acc); });
+
+  // Linea obiettivo (tutti i 23 non-grigi conclusi entro ott, lineare)
+  const nonGrey = SUPPLIERS.filter(s=>s.stato!=='In capo a fornitore / da disdettare').length;
+  const target  = MONTHS_LABELS.map((_,i) => Math.round(nonGrey * (i+1)/10));
+
+  // Mese corrente
+  const cm = Math.min(Math.max(now.getMonth()+1,1),10);
+
+  const ctx = document.getElementById('chart-proj').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: MONTHS_LABELS,
+      datasets: [
+        {
+          type: 'line',
+          label: 'Obiettivo lineare',
+          data: target,
+          borderColor: 'rgba(55,138,221,0.4)',
+          backgroundColor: 'transparent',
+          borderDash: [5,4],
+          borderWidth: 2,
+          pointRadius: 0,
+          tension: 0.1,
+          order: 0,
+        },
+        {
+          type: 'bar',
+          label: 'Cumulativo conclusi (stimato)',
+          data: cumul,
+          backgroundColor: cumul.map((_,i) =>
+            i+1 < cm  ? '#52a338' :
+            i+1 === cm ? '#6ecf5a' : 'rgba(82,163,56,0.25)'
+          ),
+          borderColor: cumul.map((_,i) =>
+            i+1 <= cm ? '#52a338' : 'rgba(82,163,56,0.4)'
+          ),
+          borderWidth: 1,
+          borderRadius: 4,
+          order: 1,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display:false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y} contratti`
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display:false },
+          ticks: { font:{family:'IBM Plex Mono',size:10}, color:'#6b7385' }
+        },
+        y: {
+          beginAtZero: true,
+          max: nonGrey + 1,
+          grid: { color:'#eef0f4' },
+          ticks: {
+            font:{family:'IBM Plex Mono',size:10}, color:'#6b7385',
+            stepSize: 2,
+            callback: v => v + ' contr.'
+          }
+        }
+      },
+      animation: { duration: 900 }
+    }
+  });
+})();
+} // end renderDashboard
+
+// Avvia caricamento dal cloud
+loadFromCloud();
+</script>
+</body>
+</html>

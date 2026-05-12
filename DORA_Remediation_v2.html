@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DORA — Remediation Contrattuale | Solution Bank</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:   #1F3864;
+  --navy2:  #162a50;
+  --white:  #ffffff;
+  --bg:     #f5f6f8;
+  --bg2:    #eef0f4;
+  --border: #dde1e9;
+  --text:   #1a1f2e;
+  --muted:  #6b7385;
+  --mono:   'IBM Plex Mono', monospace;
+  --sans:   'IBM Plex Sans', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--sans); background: var(--bg); color: var(--text); min-height: 100vh; }
+
+.header {
+  background: var(--navy); padding: 28px 40px 24px;
+  position: sticky; top: 0; z-index: 100; border-bottom: 3px solid #2a4a80;
+}
+.header-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.header h1 { font-size: 20px; font-weight: 600; color: #fff; letter-spacing: -0.3px; }
+.header h1 span { color: #7ab3e8; font-weight: 300; }
+.header-sub { font-size: 11px; color: rgba(255,255,255,0.45); margin-top: 4px; font-family: var(--mono); }
+.header-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+.btn { padding: 8px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; font-family: var(--sans); transition: all .15s; }
+.btn-share { background: #2a5298; color: #fff; }
+.btn-share:hover { background: #3563b8; }
+.btn-reset { background: transparent; color: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.2); }
+.btn-reset:hover { background: rgba(255,255,255,0.08); color: #fff; }
+
+.kpi-bar { background: var(--navy2); padding: 14px 40px; display: flex; gap: 0; border-bottom: 1px solid rgba(255,255,255,0.06); flex-wrap: wrap; }
+.kpi { padding: 6px 24px 6px 0; border-right: 1px solid rgba(255,255,255,0.1); margin-right: 24px; }
+.kpi:last-child { border-right: none; }
+.kpi-label { font-size: 10px; color: rgba(255,255,255,0.4); font-family: var(--mono); text-transform: uppercase; letter-spacing: .5px; }
+.kpi-value { font-size: 22px; font-weight: 600; color: #fff; line-height: 1.2; }
+.kpi-value.green { color: #6ecf5a; }
+.kpi-value.orange { color: #FAC775; }
+
+.share-panel {
+  display: none; background: #fff; border: 1px solid var(--border);
+  border-radius: 10px; margin: 20px 40px 0; padding: 20px 24px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+.share-panel.open { display: block; }
+.share-panel h3 { font-size: 13px; font-weight: 600; color: var(--navy); margin-bottom: 12px; }
+.share-url-box { display: flex; gap: 8px; }
+.share-url-box input { flex: 1; padding: 9px 12px; border: 1px solid var(--border); border-radius: 6px; font-family: var(--mono); font-size: 11px; color: var(--muted); background: var(--bg); }
+.share-url-box .btn-copy { background: var(--navy); color: #fff; padding: 8px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; white-space: nowrap; }
+.share-url-box .btn-copy:hover { background: #2a4a80; }
+.share-note { font-size: 11px; color: var(--muted); margin-top: 8px; }
+
+.main { padding: 24px 40px 60px; }
+
+.filters { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+.filters-label { font-size: 11px; font-weight: 600; color: var(--muted); font-family: var(--mono); text-transform: uppercase; letter-spacing: .5px; margin-right: 4px; }
+.filter-group { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.filter-sep { width: 1px; height: 20px; background: var(--border); margin: 0 6px; }
+.filter-btn { padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid var(--border); background: #fff; color: var(--muted); transition: all .15s; font-family: var(--sans); }
+.filter-btn:hover { border-color: var(--navy); color: var(--navy); }
+.filter-btn.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+.filter-btn.fei-active { background: #0a5c36; color: #fff; border-color: #0a5c36; }
+.filter-btn.nonfei-active { background: #5c3d0a; color: #fff; border-color: #5c3d0a; }
+.filter-btn.semplice-active { background: #3d0a5c; color: #fff; border-color: #3d0a5c; }
+
+.table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+table { width: 100%; border-collapse: collapse; min-width: 900px; }
+thead th { background: var(--navy); color: rgba(255,255,255,0.7); font-size: 10px; font-weight: 600; padding: 10px 8px; text-align: center; font-family: var(--mono); letter-spacing: .3px; white-space: nowrap; border-right: 1px solid rgba(255,255,255,0.08); }
+thead th.th-name { text-align: left; padding-left: 20px; min-width: 185px; }
+thead th.th-stato { min-width: 185px; }
+thead th.th-fei { min-width: 110px; }
+thead th.th-today { background: #c0392b; color: #fff; }
+tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: #f8f9fc; }
+tbody tr.hidden { display: none; }
+td { padding: 0; height: 38px; border-right: 1px solid var(--border); }
+td.td-name { padding: 0 16px 0 20px; font-size: 13px; font-weight: 500; color: var(--navy); white-space: nowrap; }
+td.td-stato { padding: 6px 10px; }
+td.td-fei { padding: 4px 8px; text-align: center; }
+td.td-bar { padding: 6px 3px; }
+td.td-today { background: rgba(192,57,43,0.04); }
+
+.stato-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap; cursor: pointer; transition: opacity .15s; border: none; font-family: var(--sans); width: 100%; text-align: center; }
+.stato-badge:hover { opacity: .85; }
+
+.fei-badge { display: inline-block; padding: 3px 9px; border-radius: 4px; font-size: 11px; font-weight: 700; white-space: nowrap; letter-spacing: .3px; }
+.fei-FEI        { background: #d4edda; color: #0a5c36; border: 1px solid #a3d9b1; }
+.fei-NONFEI     { background: #fff3cd; color: #7a4f00; border: 1px solid #ffd97d; }
+.fei-SEMPLICE   { background: #ede7f6; color: #4a1a7a; border: 1px solid #c5a8f0; }
+
+.stato-cell { position: relative; }
+.stato-dropdown { display: none; position: absolute; top: 100%; left: 0; z-index: 200; background: #fff; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); min-width: 240px; padding: 4px 0; overflow: hidden; }
+.stato-dropdown.open { display: block; }
+.stato-option { padding: 8px 14px; font-size: 12px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background .1s; }
+.stato-option:hover { background: var(--bg); }
+.stato-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+.bar-cell { height: 22px; border-radius: 3px; margin: 0 2px; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 14px; align-items: center; }
+.leg { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+.leg-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+.legend-sep { width: 1px; height: 16px; background: var(--border); }
+
+.toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(80px); background: #1a1f2e; color: #fff; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; opacity: 0; transition: all .3s; z-index: 999; pointer-events: none; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.nota { font-size: 11px; color: var(--muted); margin-top: 16px; font-family: var(--mono); }
+.nota span { color: #c0392b; font-weight: 600; }
+
+@media (max-width: 700px) {
+  .header, .kpi-bar, .main { padding-left: 16px; padding-right: 16px; }
+  .share-panel { margin-left: 16px; margin-right: 16px; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div>
+      <h1>DORA <span>/</span> Remediation Contrattuale — <span>Solution Bank</span></h1>
+      <div class="header-sub">Periodo Gen 2026 → Ott 2026 &nbsp;|&nbsp; Deadline finale: 31/10/2026 &nbsp;|&nbsp; 26 fornitori &nbsp;|&nbsp; Aggiornato al: <span id="header-date" style="color:#7ab3e8;font-weight:600"></span></div>
+    </div>
+    <div class="header-actions">
+      <a href="DORA_Dashboard.html" style="text-decoration:none"><button class="btn btn-share" style="background:#0a5c36">📊 Dashboard</button></a>
+      <span id="save-status" style="font-size:11px;color:rgba(255,255,255,0.5);font-family:var(--mono);align-self:center;">⟳ Caricamento...</span>
+      <button class="btn btn-reset" onclick="resetAll()">↺ Reset</button>
+      <button class="btn btn-share" onclick="toggleShare()">⬡ Condividi link</button>
+    </div>
+  </div>
+</div>
+
+<div class="kpi-bar">
+  <div class="kpi"><div class="kpi-label">Totale</div><div class="kpi-value" id="k-tot">26</div></div>
+  <div class="kpi"><div class="kpi-label">Compliant / Conclusi</div><div class="kpi-value green" id="k-done">—</div></div>
+  <div class="kpi"><div class="kpi-label">In lavorazione</div><div class="kpi-value orange" id="k-wip">—</div></div>
+  <div class="kpi"><div class="kpi-label">Da avviare</div><div class="kpi-value" id="k-avv">—</div></div>
+  <div class="kpi"><div class="kpi-label">% completato</div><div class="kpi-value green" id="k-pct">—</div></div>
+  <div class="kpi"><div class="kpi-label">FEI</div><div class="kpi-value" id="k-fei" style="color:#6ecf5a">—</div></div>
+  <div class="kpi"><div class="kpi-label">NON FEI</div><div class="kpi-value" id="k-nonfei" style="color:#FAC775">—</div></div>
+  <div class="kpi"><div class="kpi-label">Fornitura Semplice</div><div class="kpi-value" id="k-semplice" style="color:#c9a8f5">—</div></div>
+  <div class="kpi"><div class="kpi-label">Data aggiornamento</div><div class="kpi-value" id="k-date" style="font-size:13px;color:#fff;letter-spacing:.5px">—</div></div>
+</div>
+
+<div class="share-panel" id="share-panel">
+  <h3>Link condivisibile — lo stato attuale è codificato nell'URL</h3>
+  <div class="share-url-box">
+    <input type="text" id="share-url" readonly>
+    <button class="btn-copy" onclick="copyLink()">Copia link</button>
+  </div>
+  <p class="share-note">Chiunque apra questo link vedrà esattamente la versione attuale con tutti gli stati aggiornati.</p>
+</div>
+
+<div class="main">
+
+<div class="legend">
+  <div class="leg"><div class="leg-dot" style="background:#FAC775"></div>Da avviare</div>
+  <div class="leg"><div class="leg-dot" style="background:#185FA5"></div>Analisi banca — Team PR</div>
+  <div class="leg"><div class="leg-dot" style="background:#85B7EB"></div>Analisi banca — Ufficio Legale</div>
+  <div class="leg"><div class="leg-dot" style="background:#7F77DD"></div>Analisi cliente</div>
+  <div class="leg"><div class="leg-dot" style="background:#EF9F27"></div>Fase di chiusura</div>
+  <div class="leg"><div class="leg-dot" style="background:#52a338"></div>Compliant / Concluso</div>
+  <div class="leg"><div class="leg-dot" style="background:#B4B2A9"></div>In capo a fornitore</div>
+  <div class="legend-sep"></div>
+  <div class="leg"><span class="fei-badge fei-FEI">FEI</span></div>
+  <div class="leg"><span class="fei-badge fei-NONFEI">NON FEI</span></div>
+  <div class="leg"><span class="fei-badge fei-SEMPLICE">Fornitura Semplice</span></div>
+</div>
+
+<div class="filters">
+  <span class="filters-label">Stato:</span>
+  <div class="filter-group" id="stato-filters">
+    <button class="filter-btn active" data-f="all">Tutti</button>
+    <button class="filter-btn" data-f="Da avviare">Da avviare</button>
+    <button class="filter-btn" data-f="Analisi banca — Team PR">Team PR</button>
+    <button class="filter-btn" data-f="Analisi banca — Ufficio Legale">Ufficio Legale</button>
+    <button class="filter-btn" data-f="Analisi cliente">Analisi cliente</button>
+    <button class="filter-btn" data-f="Fase di chiusura">Fase chiusura</button>
+    <button class="filter-btn" data-f="Compliant / Concluso">Conclusi</button>
+    <button class="filter-btn" data-f="grigia">Grigi</button>
+  </div>
+  <div class="filter-sep"></div>
+  <span class="filters-label">Qualifica:</span>
+  <div class="filter-group" id="fei-filters">
+    <button class="filter-btn" data-fei="FEI">FEI</button>
+    <button class="filter-btn" data-fei="NON FEI">NON FEI</button>
+    <button class="filter-btn" data-fei="Fornitura Semplice">Fornitura Semplice</button>
+  </div>
+</div>
+
+<div class="table-wrap">
+<table id="main-table">
+<thead>
+<tr>
+  <th class="th-name">Fornitore</th>
+  <th class="th-fei">Qualifica</th>
+  <th class="th-stato">Stato corrente</th>
+  <th id="mth-1">Gen</th><th id="mth-2">Feb</th><th id="mth-3">Mar</th>
+  <th id="mth-4">Apr</th><th id="mth-5">Mag</th><th id="mth-6">Giu</th>
+  <th id="mth-7">Lug</th><th id="mth-8">Ago</th><th id="mth-9">Set</th><th id="mth-10">Ott</th>
+</tr>
+</thead>
+<tbody id="tbody"></tbody>
+</table>
+</div>
+
+<p class="nota">Clicca sullo stato per modificarlo &nbsp;|&nbsp; <span>▼ Apr = mese corrente</span> &nbsp;|&nbsp; Filtra per Stato o Qualifica &nbsp;|&nbsp; "Condividi link" per inviare la versione aggiornata</p>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STATI = [
+  { key: 'Da avviare',                          bg: '#FAC775', fg: '#633806',  group: null },
+  { key: 'Analisi banca — Team PR',             bg: '#185FA5', fg: '#ffffff',  group: 'Analisi banca' },
+  { key: 'Analisi banca — Ufficio Legale',      bg: '#85B7EB', fg: '#042C53',  group: 'Analisi banca' },
+  { key: 'Analisi cliente',                     bg: '#7F77DD', fg: '#ffffff',  group: null },
+  { key: 'Fase di chiusura',                    bg: '#EF9F27', fg: '#412402',  group: null },
+  { key: 'Compliant / Concluso',                bg: '#52a338', fg: '#ffffff',  group: null },
+  { key: 'In capo a fornitore / da disdettare', bg: '#B4B2A9', fg: '#444441',  group: null },
+];
+
+const FEI_LIST = ['FEI', 'NON FEI', 'Fornitura Semplice'];
+const FEI_COLORS = {
+  'FEI':               { bg: '#d4edda', fg: '#0a5c36', border: '#a3d9b1' },
+  'NON FEI':           { bg: '#fff3cd', fg: '#7a4f00', border: '#ffd97d' },
+  'Fornitura Semplice':{ bg: '#ede7f6', fg: '#4a1a7a', border: '#c5a8f0' },
+};
+
+const MONTH_STARTS = {
+  'Da avviare':5,'Analisi banca — Team PR':4,'Analisi banca — Ufficio Legale':4,
+  'Analisi cliente':4,'Fase di chiusura':3,'Compliant / Concluso':1,
+  'In capo a fornitore / da disdettare':1
+};
+const MONTH_ENDS = {
+  'Da avviare':10,'Analisi banca — Team PR':7,'Analisi banca — Ufficio Legale':9,
+  'Analisi cliente':9,'Fase di chiusura':7,'Compliant / Concluso':4,
+  'In capo a fornitore / da disdettare':10
+};
+
+const SUPPLIERS_DEFAULT = [
+  { name:'Infocert',                    fei:'FEI',               stato:'Analisi banca — Ufficio Legale',      s:4, e:9  },
+  { name:'Netech',                      fei:'FEI',               stato:'Compliant / Concluso',                s:1, e:3  },
+  { name:'BVTech',                      fei:'FEI',               stato:'Compliant / Concluso',                s:1, e:3  },
+  { name:'TXTNovigo',                   fei:'FEI',               stato:'In capo a fornitore / da disdettare', s:1, e:10 },
+  { name:'DedaGroup',                   fei:'FEI',               stato:'Da avviare',                          s:5, e:10 },
+  { name:'Allitude',                    fei:'FEI',               stato:'In capo a fornitore / da disdettare', s:1, e:10 },
+  { name:'Cerved Group',                fei:'FEI',               stato:'Fase di chiusura',                    s:3, e:6  },
+  { name:'NewSoft Srl',                 fei:'NON FEI',           stato:'Analisi banca — Team PR',             s:4, e:7  },
+  { name:'Bios Management Srl',         fei:'NON FEI',           stato:'Compliant / Concluso',                s:1, e:4  },
+  { name:'Mediatica Digital Spa',       fei:'FEI',               stato:'Fase di chiusura',                    s:3, e:6  },
+  { name:'Kroll Advisory Spa',          fei:'Fornitura Semplice',stato:'Da avviare',                          s:5, e:10 },
+  { name:'Dinova Srl',                  fei:'NON FEI',           stato:'Analisi banca — Team PR',             s:4, e:7  },
+  { name:'HR Tools Srl',                fei:'NON FEI',           stato:'Compliant / Concluso',                s:1, e:4  },
+  { name:'Las Lab Srl',                 fei:'NON FEI',           stato:'In capo a fornitore / da disdettare', s:1, e:10 },
+  { name:'Dilitrust Italia Srl',        fei:'NON FEI',           stato:'Analisi banca — Team PR',             s:4, e:7  },
+  { name:'FIDA SRL',                    fei:'NON FEI',           stato:'Da avviare',                          s:5, e:10 },
+  { name:'Iqera Italia Spa',            fei:'FEI',               stato:'Da avviare',                          s:5, e:10 },
+  { name:'RINA Prime Credit AM SRL',    fei:'FEI',               stato:'Da avviare',                          s:5, e:10 },
+  { name:'Board Italia Srl',            fei:'NON FEI',           stato:'Analisi banca — Team PR',             s:4, e:7  },
+  { name:'Prometeia Spa',               fei:'NON FEI',           stato:'Analisi banca — Team PR',             s:4, e:7  },
+  { name:'Ats Co.Svi.G. Srl',          fei:'FEI',               stato:'Da avviare',                          s:5, e:10 },
+  { name:'Crif Spa',                    fei:'NON FEI',           stato:'Da avviare',                          s:5, e:10 },
+  { name:'Selecta Industrial Op. Spa',  fei:'FEI',               stato:'Da avviare',                          s:5, e:10 },
+  { name:'Bureau van Dijk Spa',         fei:'Fornitura Semplice',stato:'Da avviare',                          s:5, e:10 },
+  { name:'Refinitiv / Thomson Reuters', fei:'Fornitura Semplice',stato:'Compliant / Concluso',                s:1, e:4  },
+  { name:'Debitos',                     fei:'NON FEI',           stato:'Compliant / Concluso',                s:1, e:4  },
+];
+
+// Colonna mese corrente — dinamica, si aggiorna ogni volta che apri il file
+const now = new Date();
+const currentMonth = now.getMonth() + 1; // 1=Gen ... 12=Dic
+const todayCol = (currentMonth >= 1 && currentMonth <= 10) ? currentMonth : null;
+let suppliers = JSON.parse(JSON.stringify(SUPPLIERS_DEFAULT));
+let activeFilter = 'all';
+let activeFei    = 'all';
+
+function getColor(stato) {
+  return STATI.find(s=>s.key===stato)||{bg:'#ccc',fg:'#333'};
+}
+function feiBadge(fei) {
+  const cls = fei==='FEI'?'fei-FEI':fei==='NON FEI'?'fei-NONFEI':'fei-SEMPLICE';
+  return `<span class="fei-badge ${cls}">${fei}</span>`;
+}
+
+const BIN_ID  = '6a030bad250b1311c33b4653';
+const API_KEY = '$2a$10$g7M811r1ztaf6PR6MON3u.4TZ7T7yIcE708UVr6wRKKKdAxdi/ViO';
+const BIN_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+
+async function saveToCloud() {
+  const data = suppliers.map(s=>( { stato: s.stato, fei: s.fei } ));
+  try {
+    await fetch(BIN_URL, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': API_KEY,
+        'X-Bin-Versioning': 'false'
+      },
+      body: JSON.stringify({ version: 2, data })
+    });
+    showSaveStatus('✓ Salvato', '#52a338');
+  } catch(e) {
+    showSaveStatus('⚠ Errore salvataggio', '#c0392b');
+  }
+}
+
+async function loadFromCloud() {
+  showSaveStatus('⟳ Caricamento...', '#378ADD');
+  try {
+    const res = await fetch(BIN_URL + '/latest', {
+      headers: { 'X-Master-Key': API_KEY }
+    });
+    const json = await res.json();
+    const saved = json.record;
+    if (saved && saved.data && saved.data.length === suppliers.length) {
+      saved.data.forEach((d, i) => {
+        if (d.stato && STATI.find(x=>x.key===d.stato)) suppliers[i].stato = d.stato;
+        if (d.fei  && FEI_LIST.includes(d.fei))         suppliers[i].fei  = d.fei;
+      });
+      showSaveStatus('✓ Dati aggiornati', '#52a338');
+    } else {
+      showSaveStatus('Nessun dato salvato', '#6b7385');
+    }
+  } catch(e) {
+    showSaveStatus('⚠ Errore caricamento', '#c0392b');
+  }
+  renderTable();
+}
+
+function showSaveStatus(msg, color) {
+  const el = document.getElementById('save-status');
+  if (el) { el.textContent = msg; el.style.color = color; }
+}
+
+function buildURL() {
+  return location.href.split('?')[0];
+}
+function loadFromURL() {
+  // Caricamento ora gestito da loadFromCloud()
+}
+
+function renderKPIs() {
+  const done  = suppliers.filter(s=>s.stato==='Compliant / Concluso').length;
+  const wip   = suppliers.filter(s=>['Analisi banca — Team PR','Analisi banca — Ufficio Legale','Analisi cliente','Fase di chiusura'].includes(s.stato)).length;
+  const avv   = suppliers.filter(s=>s.stato==='Da avviare').length;
+  const fei   = suppliers.filter(s=>s.fei==='FEI').length;
+  const nonfei= suppliers.filter(s=>s.fei==='NON FEI').length;
+  const semp  = suppliers.filter(s=>s.fei==='Fornitura Semplice').length;
+  document.getElementById('k-done').textContent   = done;
+  document.getElementById('k-wip').textContent    = wip;
+  document.getElementById('k-avv').textContent    = avv;
+  document.getElementById('k-pct').textContent    = Math.round(done/suppliers.length*100)+'%';
+  document.getElementById('k-fei').textContent    = fei;
+  document.getElementById('k-nonfei').textContent = nonfei;
+  document.getElementById('k-semplice').textContent = semp;
+}
+
+function isHidden(sup) {
+  const stateOk = activeFilter==='all' ||
+    (activeFilter==='grigia' ? sup.stato==='In capo a fornitore / da disdettare' :
+     activeFilter==='Analisi banca' ? sup.stato.startsWith('Analisi banca') :
+     sup.stato===activeFilter);
+  const feiOk   = activeFei==='all' || sup.fei===activeFei;
+  return !stateOk || !feiOk;
+}
+
+function renderTable() {
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML='';
+  suppliers.forEach((sup,idx)=>{
+    const {bg,fg} = getColor(sup.stato);
+    const ms = MONTH_STARTS[sup.stato]||sup.s||5;
+    const me = MONTH_ENDS[sup.stato]||sup.e||10;
+    const tr = document.createElement('tr');
+    if(isHidden(sup)) tr.classList.add('hidden');
+    tr.dataset.idx=idx;
+
+    // Name
+    const tdName=document.createElement('td');
+    tdName.className='td-name';
+    tdName.textContent=sup.name;
+    tr.appendChild(tdName);
+
+    // FEI dropdown
+    const tdFei=document.createElement('td');
+    tdFei.className='td-fei stato-cell';
+    const fc = FEI_COLORS[sup.fei]||{bg:'#eee',fg:'#333',border:'#ccc'};
+    tdFei.innerHTML=`
+      <button class="stato-badge" style="background:${fc.bg};color:${fc.fg};border:1px solid ${fc.border};font-size:11px;padding:3px 8px" onclick="toggleFeiDropdown(${idx},event)">
+        ${sup.fei}
+      </button>
+      <div class="stato-dropdown" id="fdd-${idx}">
+        ${FEI_LIST.map(f => {
+          const c = FEI_COLORS[f];
+          const active = f === sup.fei;
+          return `<div class="stato-option" onclick="setFei(${idx},'${f}',event)">
+            <span class="stato-dot" style="background:${c.bg};border:1px solid ${c.border}"></span>
+            <span style="color:${active?c.fg:'var(--text)'};font-weight:${active?'600':'400'}">${f}</span>
+            ${active?`<span style="margin-left:auto;color:${c.fg};font-size:12px">✓</span>`:''}
+          </div>`;
+        }).join('')}
+      </div>`;
+    tr.appendChild(tdFei);
+
+    // Stato dropdown
+    const tdStato=document.createElement('td');
+    tdStato.className='td-stato stato-cell';
+    tdStato.innerHTML=`
+      <button class="stato-badge" style="background:${bg};color:${fg}" onclick="toggleDropdown(${idx},event)">
+        ${sup.stato}
+      </button>
+      <div class="stato-dropdown" id="dd-${idx}">
+        ${STATI.map(st=>`
+          <div class="stato-option" onclick="setStato(${idx},'${st.key.replace(/'/g,"\\'")}',event)">
+            <span class="stato-dot" style="background:${st.bg}"></span>
+            <span style="color:${st.key===sup.stato?'var(--navy)':'var(--text)'};font-weight:${st.key===sup.stato?'600':'400'}">${st.key}</span>
+            ${st.key===sup.stato?'<span style="margin-left:auto;color:var(--navy)">✓</span>':''}
+          </div>`).join('')}
+      </div>`;
+    tr.appendChild(tdStato);
+
+    // Month bars
+    for(let m=1;m<=10;m++){
+      const td=document.createElement('td');
+      td.className='td-bar'+(todayCol && m===todayCol?' td-today':'');
+      if(m>=ms&&m<=me){
+        const br=`${m===ms?'3px':'0'} ${m===me?'3px':'0'} ${m===me?'3px':'0'} ${m===ms?'3px':'0'}`;
+        td.innerHTML=`<div class="bar-cell" style="background:${bg};border-radius:${br}"></div>`;
+      }
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
+  });
+  renderKPIs();
+}
+
+function buildDropdownItems(currentStato) {
+  let html = '';
+  const groups = {};
+  STATI.forEach(st => {
+    if (st.group) {
+      if (!groups[st.group]) groups[st.group] = [];
+      groups[st.group].push(st);
+    }
+  });
+  const rendered = new Set();
+  STATI.forEach(st => {
+    if (st.group) {
+      if (!rendered.has(st.group)) {
+        rendered.add(st.group);
+        // Group header
+        html += `<div style="padding:6px 14px 2px;font-size:10px;font-weight:600;color:var(--muted);font-family:var(--mono);text-transform:uppercase;letter-spacing:.4px;border-top:0.5px solid var(--border)">Analisi banca</div>`;
+        groups[st.group].forEach(sub => {
+          const active = sub.key === currentStato;
+          html += `<div class="stato-option" style="padding-left:24px" onclick="setStato(event.currentTarget.closest('tr').dataset.idx|0,'${sub.key.replace(/'/g,"\'")}',event)">
+            <span style="font-size:10px;color:var(--muted);margin-right:2px">↳</span>
+            <span class="stato-dot" style="background:${sub.bg}"></span>
+            <span style="color:${active?'#185FA5':'var(--text)'};font-weight:${active?'600':'400'}">${sub.key.replace('Analisi banca — ','')}</span>
+            ${active?'<span style="margin-left:auto;color:#185FA5;font-size:12px">✓</span>':''}
+          </div>`;
+        });
+      }
+    } else {
+      const active = st.key === currentStato;
+      html += `<div class="stato-option" onclick="setStato(event.currentTarget.closest('tr').dataset.idx|0,'${st.key.replace(/'/g,"\'")}',event)">
+        <span class="stato-dot" style="background:${st.bg}"></span>
+        <span style="color:${active?'var(--navy)':'var(--text)'};font-weight:${active?'600':'400'}">${st.key}</span>
+        ${active?'<span style="margin-left:auto;color:var(--navy);font-size:12px">✓</span>':''}
+      </div>`;
+    }
+  });
+  return html;
+}
+
+function toggleDropdown(idx,e){
+  e.stopPropagation();
+  document.querySelectorAll('.stato-dropdown.open').forEach(d=>{if(d.id!==`dd-${idx}`)d.classList.remove('open');});
+  document.getElementById(`dd-${idx}`).classList.toggle('open');
+}
+function setStato(idx,stato,e){
+  if (typeof idx === 'object') { e = stato; stato = idx; idx = 0; }
+  e.stopPropagation();
+  suppliers[idx].stato=stato;
+  document.querySelectorAll('.stato-dropdown').forEach(d=>d.classList.remove('open'));
+  renderTable();
+  saveToCloud();
+  showToast(`${suppliers[idx].name} → ${stato}`);
+}
+function toggleFeiDropdown(idx,e){
+  e.stopPropagation();
+  document.querySelectorAll('.stato-dropdown.open').forEach(d=>{if(d.id!==`fdd-${idx}`)d.classList.remove('open');});
+  document.getElementById(`fdd-${idx}`).classList.toggle('open');
+}
+function setFei(idx,fei,e){
+  e.stopPropagation();
+  suppliers[idx].fei=fei;
+  document.querySelectorAll('.stato-dropdown').forEach(d=>d.classList.remove('open'));
+  renderTable();
+  saveToCloud();
+  showToast(`${suppliers[idx].name} → ${fei}`);
+}
+function updateShareURL(){
+  const input=document.getElementById('share-url');
+  if(input) input.value=buildURL();
+}
+function toggleShare(){ updateShareURL(); document.getElementById('share-panel').classList.toggle('open'); }
+function copyLink(){ navigator.clipboard.writeText(document.getElementById('share-url').value).then(()=>showToast('Link copiato!')); }
+function resetAll(){
+  if(!confirm('Resettare tutti gli stati ai valori originali?')) return;
+  suppliers=JSON.parse(JSON.stringify(SUPPLIERS_DEFAULT));
+  history.replaceState({},'',location.pathname);
+  activeFilter='all'; activeFei='all';
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active','fei-active','nonfei-active','semplice-active'));
+  document.querySelector('[data-f="all"]').classList.add('active');
+  renderTable();
+  saveToCloud();
+  showToast('Stati resettati');
+}
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// Filters — stato
+document.getElementById('stato-filters').addEventListener('click',e=>{
+  const btn=e.target.closest('button'); if(!btn) return;
+  document.querySelectorAll('#stato-filters .filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  activeFilter=btn.dataset.f;
+  renderTable();
+});
+
+// Filters — FEI (toggle)
+document.getElementById('fei-filters').addEventListener('click',e=>{
+  const btn=e.target.closest('button'); if(!btn) return;
+  const wasActive = btn.classList.contains('fei-active')||btn.classList.contains('nonfei-active')||btn.classList.contains('semplice-active');
+  document.querySelectorAll('#fei-filters .filter-btn').forEach(b=>b.classList.remove('fei-active','nonfei-active','semplice-active'));
+  if(wasActive){ activeFei='all'; }
+  else {
+    activeFei=btn.dataset.fei;
+    const cls = activeFei==='FEI'?'fei-active':activeFei==='NON FEI'?'nonfei-active':'semplice-active';
+    btn.classList.add(cls);
+  }
+  renderTable();
+});
+
+document.addEventListener('click',()=>document.querySelectorAll('.stato-dropdown.open').forEach(d=>d.classList.remove('open')));
+
+loadFromCloud(); updateShareURL();
+
+// Evidenzia header colonna mese corrente in modo dinamico
+(function() {
+  const months = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott'];
+  const now = new Date();
+  const cm = now.getMonth() + 1; // 1-based
+
+  months.forEach((label, i) => {
+    const th = document.getElementById('mth-' + (i+1));
+    if (!th) return;
+    const isCurrentYear = now.getFullYear() === 2026;
+    const isToday = isCurrentYear && (i+1) === cm;
+    if (isToday) {
+      th.innerHTML = label + ' ▼<br><small>oggi</small>';
+      th.style.background = '#c0392b';
+      th.style.color = '#fff';
+    } else if (isCurrentYear && (i+1) < cm) {
+      // mesi passati: leggermente più scuri
+      th.style.color = 'rgba(255,255,255,0.35)';
+      th.innerHTML = label + '<br><small style="font-size:9px">✓</small>';
+    } else {
+      th.innerHTML = label;
+    }
+  });
+})();
+
+// Data automatica aggiornata ad ogni apertura
+(function() {
+  const now = new Date();
+  const opts = { day: '2-digit', month: 'long', year: 'numeric' };
+  const dateStr = now.toLocaleDateString('it-IT', opts);
+  const timeStr = now.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+  const full = dateStr + ' ' + timeStr;
+  const el1 = document.getElementById('header-date');
+  const el2 = document.getElementById('k-date');
+  if(el1) el1.textContent = full;
+  if(el2) el2.textContent = full;
+})();
+</script>
+</body>
+</html>
